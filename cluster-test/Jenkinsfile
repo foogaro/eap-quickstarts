@@ -41,7 +41,7 @@ node('maven') {
 
   stage('Code Analysis') {
     echo "Code Analysis"
-    sh "${mvnCmd} sonar:sonar -Dsonar.host.url=http://sonarqube-${ocpProject}.apps.duo.nl -Dsonar.projectName=${JOB_BASE_NAME}"
+    sh "${mvnCmd} sonar:sonar -Dsonar.host.url=http://sonarqube:9000/ -Dsonar.projectName=${JOB_BASE_NAME}"
   }
 
   stage('Publish to Nexus') {
