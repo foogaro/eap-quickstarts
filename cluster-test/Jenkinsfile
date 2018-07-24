@@ -5,7 +5,8 @@
 node('maven') {
 
   def ocpProject = "myproject"
-  def pomFile    = "cluster-test/pom.xml"
+  def appPath    = "cluster-test"
+  def pomFile    = "${appPath}/pom.xml"
   def mvnCmd     = "mvn -e -f ${pomFile}"
 
   stage('Checkout Source') {
@@ -22,8 +23,9 @@ node('maven') {
   def packaging   = getProjectPackagingFromPom(pomFile)
 
   stage('Debug') {
-    echo "Maven Project name ${projectName} ${groupId}-${artifactId} version ${version} packaging ${packaging}"
     echo "OCP Project ${ocpProject}"
+    echo "App path ${appPath}"
+    echo "Maven Project name ${projectName} ${groupId}-${artifactId} version ${version} packaging ${packaging}"
     echo "Maven POM file: ${pomFile}"
     echo "Maven default command: ${mvnCmd}"
     echo "Job base name: ${JOB_BASE_NAME}"
@@ -53,7 +55,7 @@ node('maven') {
     echo "New Tag: ${newTag}"
 
     // Copy the war file we just built and rename to ROOT.war
-    sh "cp ./target/${projectName}.${packaging} ./ROOT.war"
+    sh "cp ./${appPath}/target/${projectName}.${packaging} ./ROOT.war"
 
     // Start Binary Build in OpenShift using the file we just published
     // Replace xyz-tasks-dev with the name of your dev project
