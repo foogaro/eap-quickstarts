@@ -1,0 +1,12 @@
+kind: "BuildConfig"
+apiVersion: "v1"
+metadata:
+  name: "cluster-test-pipeline"
+spec:
+  source:
+    git:
+      uri: "https://github.com/foogaro/eap-quickstarts"
+  strategy:
+    jenkinsPipelineStrategy:
+      jenkinsfilePath: cluster-test/Jenkinsfile
+      type: JenkinsPipeline
