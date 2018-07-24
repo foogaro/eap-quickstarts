@@ -5,8 +5,8 @@
 node('maven') {
 
   def ocpProject = "myproject"
-  def mvnCmd     = "mvn -e"
   def pomFile    = "cluster-test/pom.xml"
+  def mvnCmd     = "mvn -e -f ${pomFile}"
 
   stage('Checkout Source') {
     checkout scm
