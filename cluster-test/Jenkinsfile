@@ -1,0 +1,89 @@
+#!groovy
+
+// Run this node on a Maven Slave
+// Maven Slaves have JDK and Maven already installed
+node('maven') {
+
+  def ocpProject = "myproject"
+  def mvnCmd = "mvn -e"
+
+  stage('Checkout Source') {
+    checkout scm
+  }
+
+  // The following variables need to be defined at the top level and not inside
+  // the scope of a stage - otherwise they would not be accessible from other stages.
+  // Extract version and other properties from the pom.xml
+  def groupId     = getGroupIdFromPom("pom.xml")
+  def artifactId  = getArtifactIdFromPom("pom.xml")
+  def version     = getVersionFromPom("pom.xml")
+  def projectName = getProjectNameFromPom("pom.xml")
+  def packaging   = getProjectPackagingFromPom("pom.xml")
+
+  stage('Build war') {
+    echo "Building ${groupId}-${artifactId} version ${version}"
+    sh "${mvnCmd} clean package -DskipTests"
+  }
+
+  stage('Unit Tests') {
+    echo "Unit Tests"
+    sh "${mvnCmd} test"
+  }
+
+  stage('Code Analysis') {
+    echo "Code Analysis"
+    sh "${mvnCmd} sonar:sonar -Dsonar.host.url=http://sonarqube.${ocpProject}.svc.cluster.local:9000/ -Dsonar.projectName=${JOB_BASE_NAME}"
+  }
+
+  stage('Publish to Nexus') {
+    echo "Publishing to Nexus"
+  }
+
+  stage('Build OpenShift Image') {
+    def newTag = "TestingCandidate-${version}"
+    echo "New Tag: ${newTag}"
+
+    // Copy the war file we just built and rename to ROOT.war
+    sh "cp ./target/${projectName}.${packaging} ./ROOT.war"
+
+    // Start Binary Build in OpenShift using the file we just published
+    // Replace xyz-tasks-dev with the name of your dev project
+    sh "oc project ${ocpProject}"
+    sh "oc start-build tasks --follow --from-file=./ROOT.war -n ${ocpProject}"
+
+    openshiftTag alias: 'false', destStream: 'tasks', destTag: newTag, destinationNamespace: '${ocpProject}', namespace: '${ocpProject}', srcStream: 'tasks', srcTag: 'latest', verbose: 'false'
+  }
+
+  stage('Deploy to Dev') {
+    // Patch the DeploymentConfig so that it points to the latest TestingCandidate-${version} Image.
+    // Replace xyz-tasks-dev with the name of your dev project
+    sh "oc project ${ocpProject}"
+    sh "oc patch dc tasks --patch '{\"spec\": { \"triggers\": [ { \"type\": \"ImageChange\", \"imageChangeParams\": { \"containerNames\": [ \"tasks\" ], \"from\": { \"kind\": \"ImageStreamTag\", \"namespace\": \"${ocpProject}\", \"name\": \"tasks:TestingCandidate-$version\"}}}]}}' -n ${ocpProject}"
+
+    openshiftDeploy depCfg: 'tasks', namespace: '${ocpProject}', verbose: 'false', waitTime: '', waitUnit: 'sec'
+    openshiftVerifyDeployment depCfg: 'tasks', namespace: '${ocpProject}', replicaCount: '1', verbose: 'false', verifyReplicaCount: 'false', waitTime: '', waitUnit: 'sec'
+    openshiftVerifyService namespace: '${ocpProject}', svcName: 'tasks', verbose: 'false'
+  }
+}
+
+// Convenience Functions to read variables from the pom.xml
+def getVersionFromPom(pom) {
+  def matcher = readFile(pom) =~ '<version>(.+)</version>'
+  matcher ? matcher[0][1] : null
+}
+def getGroupIdFromPom(pom) {
+  def matcher = readFile(pom) =~ '<groupId>(.+)</groupId>'
+  matcher ? matcher[0][1] : null
+}
+def getArtifactIdFromPom(pom) {
+  def matcher = readFile(pom) =~ '<artifactId>(.+)</artifactId>'
+  matcher ? matcher[0][1] : null
+}
+def getProjectNameFromPom(pom) {
+  def matcher = readFile(pom) =~ '<name>(.+)</name>'
+  matcher ? matcher[0][1] : null
+}
+def getProjectPackagingFromPom(pom) {
+  def matcher = readFile(pom) =~ '<packaging>(.+)</packaging>'
+  matcher ? matcher[0][1] : null
+}
