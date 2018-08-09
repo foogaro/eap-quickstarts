@@ -1,7 +1,7 @@
 <html>
-<head><title>.::. Clustering Test v1.0 .::.</title></head>
+<head><title>.::. Clustering Test .::.</title></head>
 <body>
-<h2>Clustering Test v1.0</h2>
+<h2>Clustering Test </h2>
 
 <%
     Object sessAttr = session.getAttribute("visitors");
