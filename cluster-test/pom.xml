@@ -8,7 +8,7 @@
     <name>cluster-test</name>
 
     <build>
-        <finalName>${project.name}</finalName>
+        <finalName>ROOT.war</finalName>
         <plugins>
             <plugin>
                 <artifactId>maven-war-plugin</artifactId>
