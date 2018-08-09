@@ -10,7 +10,7 @@
     int counter = sessAttr == null ? 0 : Integer.valueOf(sessAttr2+"");
     System.out.println("********************************+");
     System.out.println("Visitor(s): " + visitors);
-    System.out.println("Counter(s): " + counter);
+    System.out.println("COUNTER(s): " + counter);
     System.out.println("********************************+");
 %>
 
