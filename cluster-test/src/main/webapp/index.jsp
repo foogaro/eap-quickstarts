@@ -1,5 +1,5 @@
 <html>
-<head><title>.::. Clustering Test .::.</title></head>
+<head><title>.::. Clustering Test v1.0 .::.</title></head>
 <body>
 <h2>Clustering Test </h2>
 
